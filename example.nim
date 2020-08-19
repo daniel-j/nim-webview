@@ -1,6 +1,5 @@
 import src/webview
 import json
-import asyncdispatch
 import httpclient
 import os
 
@@ -10,8 +9,6 @@ let w = newWebview(debug=true)
 
 w.setSize(800, 600)
 w.setTitle("Webview Example")
-
-echo repr(w)
 
 w.init("""console.log("init code")""")
 
@@ -26,44 +23,46 @@ w.`bind`("test", proc (`seq`: cstring; req: cstring; arg: pointer) =
 )
 ]#
 
-w.bind("webviewLoaded", proc (args: JsonNode): Future[JsonNode] {.async, thread.} =
+w.bind("webviewLoaded", proc (args: JsonNode): JsonNode =
   echo "load event!"
 )
 
-proc onProgressChanged(total, progress, speed: BiggestInt) {.async, thread.} =
+proc onProgressChanged(total, progress, speed: BiggestInt) =
   echo("Downloaded ", progress, " of ", total)
   echo("Current rate: ", speed div 1000, "kb/s")
   # w.dispatch(proc () = w.eval("console.log(" & $ %* @[progress, total]  & ")"))
 
-w.bind("test", proc (args: JsonNode): Future[JsonNode] {.async, thread.} =
+w.bind("test", proc (args: JsonNode): JsonNode =
   echo "test! ", args.getElems
-  var client = newAsyncHttpClient()
+  var client = newHttpClient()
   client.onProgressChanged = onProgressChanged
-  let content = await client.getContent("http://speedtest.tele2.net/10MB.zip")
+  let content = client.getContent("http://speedtest.tele2.net/10MB.zip")
   echo "got content ", content.len
   return %* {"length": content.len}
 )
 
 w.init("window.addEventListener('load', function (e) {webviewLoaded()}, false)")
 
-w.bind("externalNavigate", proc(args: JsonNode): Future[JsonNode] {.async, thread.} =
+w.bind("externalNavigate", proc(args: JsonNode): JsonNode =
   let url:string = $args[0]
   echo url
 )
 
-w.bind("simple", proc (args: JsonNode) {.thread.} =
+w.bind("simple", proc (args: JsonNode) =
   echo "simple bind! no return value"
 )
 
-w.bind("terminate", proc (args: JsonNode) {.thread.} =
+w.bind("terminate", proc (args: JsonNode) =
   w.terminate()
 )
 
-w.dispatch(proc () = echo "DISPATCH")
+# w.dispatch(proc () = echo "DISPATCH")
 
 
+let uri = "file://" & getCurrentDir() / "example.html"
+echo uri
 
-w.navigate("file://" & getCurrentDir() / "example.html")
+w.navigate(uri)
 
 #[
 var
@@ -71,7 +70,7 @@ var
   thr: Thread[void]
   waiting = false
 
-proc threadFunc() {.thread.} =
+proc threadFunc() =
   sleep(20)
   while running:
     if not waiting:
