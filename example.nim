@@ -6,7 +6,9 @@ import os
 
 echo "starting"
 
-let w = create(debug=true.cint, nil)
+let w = newWebview(debug=true)
+
+echo repr w
 
 w.init("""
 console.log("init code")

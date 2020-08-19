@@ -8,7 +8,7 @@ when not (defined(windows) and defined(mingw)):
   {.compile: "../webview/webview.cc".}
 
 when defined(linux):
-  const libs = "gtk+-3.0 webkit2gtk-4.0 asd"
+  const libs = "gtk+-3.0 webkit2gtk-4.0"
   const (cflags, cflagscode) = gorgeEx("pkg-config --cflags " & libs)
   const (lflags, lflagscode) = gorgeEx("pkg-config --libs " & libs)
   static:
@@ -26,15 +26,19 @@ elif defined(macosx):
 
 
 type
-  Webview* = pointer
+  webview_t* = pointer
+  Webview = object
+    w*: webview_t
+    debug*: bool
+    window*: pointer
   Hint* {.size: sizeof(cint).} = enum None, Min, Max, Fixed
   BindCallback = proc (args: JsonNode): Future[JsonNode]
   BindSimpleCallback = proc (args: JsonNode)
-  BindArg = ref tuple[w: Webview, name: cstring]
+  BindArg = ref tuple[w: webview_t, name: cstring]
 
-var bindTable = newTable[(Webview, cstring), BindCallback]()
+var bindTable = newTable[(webview_t, cstring), BindCallback]()
 
-proc create*(debug: cint = 0; window: pointer): Webview {.importc: "webview_create".}
+proc create(debug: cint = 0; window: pointer): webview_t {.importc: "webview_create".}
   ## ```
   ##   Creates a new webview instance. If debug is non-zero - developer tools will
   ##      be enabled (if the platform supports them). Window parameter can be a
@@ -43,58 +47,58 @@ proc create*(debug: cint = 0; window: pointer): Webview {.importc: "webview_crea
   ##      Depending on the platform, a GtkWindow, NSWindow or HWND pointer can be
   ##      passed here.
   ## ```
-proc destroy*(w: Webview) {.importc: "webview_destroy".}
+proc destroy(w: webview_t) {.importc: "webview_destroy".}
   ## ```
   ##   Destroys a webview and closes the native window.
   ## ```
-proc run*(w: Webview) {.importc: "webview_run".}
+proc run(w: webview_t) {.importc: "webview_run".}
   ## ```
   ##   Runs the main loop until it's terminated. After this function exits - you
   ##      must destroy the webview.
   ## ```
-proc terminate*(w: Webview) {.importc: "webview_terminate".}
+proc terminate(w: webview_t) {.importc: "webview_terminate".}
   ## ```
   ##   Stops the main loop. It is safe to call this function from another other
   ##      background thread.
   ## ```
-proc dispatch*(w: Webview; fn: proc (w: Webview; arg: pointer); arg: pointer) {.importc: "webview_dispatch".}
+proc dispatch(w: webview_t; fn: proc (w: webview_t; arg: pointer); arg: pointer) {.importc: "webview_dispatch".}
   ## ```
   ##   Posts a function to be executed on the main thread. You normally do not need
   ##      to call this function, unless you want to tweak the native window.
   ## ```
-proc get_window*(w: Webview): pointer {.importc: "webview_get_window".}
+proc get_window(w: webview_t): pointer {.importc: "webview_get_window".}
   ## ```
   ##   Returns a native window handle pointer. When using GTK backend the pointer
   ##      is GtkWindow pointer, when using Cocoa backend the pointer is NSWindow
   ##      pointer, when using Win32 backend the pointer is HWND pointer.
   ## ```
-proc set_title*(w: Webview; title: cstring) {.importc: "webview_set_title".}
+proc set_title(w: webview_t; title: cstring) {.importc: "webview_set_title".}
   ## ```
   ##   Updates the title of the native window. Must be called from the UI thread.
   ## ```
-proc set_size*(w: Webview; width: cint; height: cint; hints: Hint = None) {.importc: "webview_set_size".}
+proc set_size(w: webview_t; width: cint; height: cint; hints: cint) {.importc: "webview_set_size".}
   ## ```
   ##   Updates native window size. See WEBVIEW_HINT constants.
   ## ```
-proc navigate*(w: Webview; url: cstring) {.importc: "webview_navigate".}
+proc navigate(w: webview_t; url: cstring) {.importc: "webview_navigate".}
   ## ```
   ##   Navigates webview to the given URL. URL may be a data URI, i.e.
   ##      "data:text/text,<html>...</html>". It is often ok not to url-encode it
   ##      properly, webview will re-encode it for you.
   ## ```
-proc init*(w: Webview; js: cstring) {.importc: "webview_init".}
+proc init(w: webview_t; js: cstring) {.importc: "webview_init".}
   ## ```
   ##   Injects JavaScript code at the initialization of the new page. Every time
   ##      the webview will open a the new page - this initialization code will be
   ##      executed. It is guaranteed that code is executed before window.onload.
   ## ```
-proc eval*(w: Webview; js: cstring) {.importc: "webview_eval".}
+proc eval(w: webview_t; js: cstring) {.importc: "webview_eval".}
   ## ```
   ##   Evaluates arbitrary JavaScript code. Evaluation happens asynchronously, also
   ##      the result of the expression is ignored. Use RPC bindings if you want to
   ##      receive notifications about the results of the evaluation.
   ## ```
-proc `bind`(w: Webview; name: cstring; fn: pointer; arg: pointer) {.importc: "webview_bind".}
+proc `bind`(w: webview_t; name: cstring; fn: pointer; arg: pointer) {.importc: "webview_bind".}
   ## ```
   ##   Binds a native C callback so that it will appear under the given name as a
   ##      global JavaScript function. Internally it uses webview_init(). Callback
@@ -102,7 +106,7 @@ proc `bind`(w: Webview; name: cstring; fn: pointer; arg: pointer) {.importc: "we
   ##      string is a JSON array of all the arguments passed to the JavaScript
   ##      function.
   ## ```
-proc `return`*(w: Webview; `seq`: cstring; status: cint; result: cstring) {.importc: "webview_return".}
+proc `return`(w: webview_t; `seq`: cstring; status: cint; result: cstring) {.importc: "webview_return".}
   ## ```
   ##   Allows to return a value from the native binding. Original request pointer
   ##      must be provided to help internal RPC engine match requests with responses.
@@ -110,7 +114,46 @@ proc `return`*(w: Webview; `seq`: cstring; status: cint; result: cstring) {.impo
   ##      If status is not zero - result is an error JSON object.
   ## ```
 
-proc `return`*(w: Webview, `seq`: string, success: bool, result: JsonNode) =
+proc newWebview*(debug: bool = true, window: pointer = nil): Webview =
+  result.debug = debug
+  result.w = create(debug.cint, window)
+  result.window = result.w.get_window()
+
+proc destroy*(w: Webview) =
+  w.w.destroy()
+
+proc terminate*(w: Webview) =
+  w.w.terminate()
+
+proc dispatch(w: webview_t; fn: proc()) =
+  w.dispatch(proc (w: webview_t; arg: pointer) = fn(), nil)
+
+proc dispatch*(w: Webview; fn: proc()) =
+  w.w.dispatch(fn)
+
+proc get_window*(w: Webview): pointer =
+  w.w.get_window()
+
+proc init*(w: Webview, js: string) =
+  w.w.init(js)
+
+proc eval*(w: Webview, js: string) =
+  w.w.eval(js)
+
+proc set_title*(w: Webview, title: string) =
+  w.w.set_title(title)
+
+proc set_size*(w: Webview, width: Positive, height: Positive, hints: Hint = None) =
+  w.w.set_size(width.cint, height.cint, hints.cint)
+
+proc navigate*(w: Webview, url: string) =
+  w.w.navigate(url)
+
+proc run*(w: Webview) =
+  w.w.run()
+
+
+proc `return`(w: webview_t, `seq`: string, success: bool, result: JsonNode) =
   if result.isNil:
     # echo "return: nil"
     w.return(`seq`, (not success).cint, "null")
@@ -118,10 +161,7 @@ proc `return`*(w: Webview, `seq`: string, success: bool, result: JsonNode) =
     # echo "return: " & $result
     w.return(`seq`, (not success).cint, $result)
 
-proc dispatch*(w: Webview; fn: proc()) =
-  w.dispatch(proc (w: Webview; arg: pointer) = fn(), nil)
-
-proc bindThread(w: Webview, name: cstring, fn: BindCallback, req: string, `seq`: string) {.gcsafe.} =
+proc bindThread(w: webview_t, name: cstring, fn: BindCallback, req: string, `seq`: string) {.gcsafe.} =
   try:
     let args = parseJson(req)
     let futureData = fn(args)
@@ -139,13 +179,13 @@ proc generalBindProc(`seq`: cstring; req: cstring; arg: pointer) =
 
 proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   let bindArg = new(BindArg)
-  bindArg.w = w
+  bindArg.w = w.w
   bindArg.name = name
   if bindArg[] in bindTable:
     echo "bind function " & $name & " already exists!"
     return
   bindTable[bindArg[]] = fn
-  w.`bind`(name, generalBindProc, cast[pointer](bindArg))
+  w.w.`bind`(name, generalBindProc, cast[pointer](bindArg))
 
 proc `bind`*(w: Webview, name: cstring, fn: BindSimpleCallback) =
   w.`bind`(name, proc (args: JsonNode): Future[JsonNode] {.async.} = fn(args))
