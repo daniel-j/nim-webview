@@ -8,7 +8,14 @@ when not (defined(windows) and defined(mingw)):
   {.compile: "../webview/webview.cc".}
 
 when defined(linux):
-  {.passC: "-DWEBVIEW_GTK=1 " & staticExec"pkg-config --cflags gtk+-3.0 webkit2gtk-4.0", passL: staticExec"pkg-config --libs gtk+-3.0 webkit2gtk-4.0".}
+  const libs = "gtk+-3.0 webkit2gtk-4.0 asd"
+  const (cflags, cflagscode) = gorgeEx("pkg-config --cflags " & libs)
+  const (lflags, lflagscode) = gorgeEx("pkg-config --libs " & libs)
+  static:
+    if cflagscode != 0 or lflagscode != 0:
+      echo cflags, "\n", lflags
+      raise newException(OSError, "Required dependencies not found!")
+  {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: lflags.}
 elif defined(windows):
   if defined(mingw):
     {.passC: "-DWEBVIEW_WINAPI=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
