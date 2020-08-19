@@ -7,7 +7,6 @@ import os
 echo "starting"
 
 let w = newWebview(debug=true)
-defer: w.destroy()
 
 w.setSize(800, 600)
 w.setTitle("Webview Example")
@@ -114,3 +113,4 @@ w.run()
 # joinThread(thr)
 
 echo "completed"
+w.destroy()
