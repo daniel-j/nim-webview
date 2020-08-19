@@ -1,5 +1,7 @@
 console.log("example.js loaded")
 
+simple()
+
 /*
 test(1, 2, 3).then(function (res) {
   console.log(res)

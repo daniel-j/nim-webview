@@ -3,6 +3,7 @@ import json
 import asyncdispatch
 import threadpool
 import tables
+import hashes
 
 when not (defined(windows) and defined(mingw)):
   {.compile: "../webview/webview.cc".}
@@ -32,11 +33,16 @@ type
     debug*: bool
     window*: pointer
   Hint* {.size: sizeof(cint).} = enum None, Min, Max, Fixed
-  BindCallback = proc (args: JsonNode): Future[JsonNode]
-  BindSimpleCallback = proc (args: JsonNode)
+
+  DispatchCallback* = proc ()
+  DispatchArg = ref tuple[fn: DispatchCallback]
+  BindCallback* = proc (args: JsonNode): Future[JsonNode]
+  BindSimpleCallback* = proc (args: JsonNode)
   BindArg = ref tuple[w: webview_t, name: cstring]
 
-var bindTable = newTable[(webview_t, cstring), BindCallback]()
+var
+  dispatchTable = newTable[Hash, (DispatchCallback, DispatchArg)]()
+  bindTable = newTable[Hash, (BindCallback, BindArg)]()
 
 proc create(debug: cint = 0; window: pointer): webview_t {.importc: "webview_create".}
   ## ```
@@ -61,7 +67,7 @@ proc terminate(w: webview_t) {.importc: "webview_terminate".}
   ##   Stops the main loop. It is safe to call this function from another other
   ##      background thread.
   ## ```
-proc dispatch(w: webview_t; fn: proc (w: webview_t; arg: pointer); arg: pointer) {.importc: "webview_dispatch".}
+proc dispatch(w: webview_t; fn: pointer; arg: pointer) {.importc: "webview_dispatch".}
   ## ```
   ##   Posts a function to be executed on the main thread. You normally do not need
   ##      to call this function, unless you want to tweak the native window.
@@ -125,12 +131,6 @@ proc destroy*(w: Webview) =
 proc terminate*(w: Webview) =
   w.w.terminate()
 
-proc dispatch(w: webview_t; fn: proc()) =
-  w.dispatch(proc (w: webview_t; arg: pointer) = fn(), nil)
-
-proc dispatch*(w: Webview; fn: proc()) =
-  w.w.dispatch(fn)
-
 proc get_window*(w: Webview): pointer =
   w.w.get_window()
 
@@ -149,9 +149,31 @@ proc set_size*(w: Webview, width: Positive, height: Positive, hints: Hint = None
 proc navigate*(w: Webview, url: string) =
   w.w.navigate(url)
 
-proc run*(w: Webview) =
+proc run*(w: Webview, sync = false) =
   w.w.run()
+  if sync:
+    sync()
 
+
+proc globalDispatchProc*(w: webview_t, arg: pointer) =
+  let dispatchArg = cast[DispatchArg](arg)
+  let key = dispatchArg[].hash
+  let (fn, _) = dispatchTable[key]
+  fn()
+  GC_unref(dispatchArg)
+      
+
+proc dispatch(w: webview_t; fn: DispatchCallback) {.thread.} =
+  {.gcsafe.}:
+    let dispatchArg = new(DispatchArg)
+    dispatchArg.fn = fn
+    let key = dispatchArg[].hash
+    dispatchTable[key] = (fn, dispatchArg)
+    GC_ref(dispatchArg)
+    w.dispatch(globalDispatchProc, cast[pointer](dispatchArg))
+
+proc dispatch*(w: Webview; fn: DispatchCallback) =
+  w.w.dispatch(fn)
 
 proc `return`(w: webview_t, `seq`: string, success: bool, result: JsonNode) =
   if result.isNil:
@@ -161,30 +183,39 @@ proc `return`(w: webview_t, `seq`: string, success: bool, result: JsonNode) =
     # echo "return: " & $result
     w.return(`seq`, (not success).cint, $result)
 
-proc bindThread(w: webview_t, name: cstring, fn: BindCallback, req: string, `seq`: string) {.gcsafe.} =
+proc bindThread(w: webview_t, name: cstring, fn: BindCallback, req: string, `seq`: string) {.thread.} =
+  echo "callback " & $name & " running in thread: " & $getThreadId()
   try:
     let args = parseJson(req)
     let futureData = fn(args)
     let data = waitFor(futureData)
     let res = %* data
-    w.dispatch(proc() = w.return(`seq`, true, res))
+    GC_ref(res)
+    w.dispatch(proc() = w.return(`seq`, true, res); GC_unref(res))
   except:
     w.dispatch(proc() = w.return(`seq`, false, %* {"error": repr(getCurrentException()), "message": getCurrentExceptionMsg()}))
     echo "Got exception ", repr(getCurrentException()), " with message ", getCurrentExceptionMsg()
 
 proc generalBindProc(`seq`: cstring; req: cstring; arg: pointer) =
-  let key = cast[BindArg](arg)[]
-  let fn = bindTable[key]
-  spawn(bindThread(key.w, key.name, fn, $req, $`seq`))
+  let bindArg = cast[BindArg](arg)
+  let key = bindArg[].hash
+  let (fn, _) = bindTable[key]
+  echo repr bindArg
+  echo isNil fn
+  spawn(bindThread(bindArg.w, bindArg.name, fn, $req, $`seq`))
 
 proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   let bindArg = new(BindArg)
   bindArg.w = w.w
   bindArg.name = name
-  if bindArg[] in bindTable:
-    echo "bind function " & $name & " already exists!"
+  let key = bindArg[].hash
+  if key in bindTable:
+    echo "bind function " & $name & " already exist for this webview!"
     return
-  bindTable[bindArg[]] = fn
+  bindTable[key] = (fn, bindArg)
+
+  GC_ref(bindArg)
+
   w.w.`bind`(name, generalBindProc, cast[pointer](bindArg))
 
 proc `bind`*(w: Webview, name: cstring, fn: BindSimpleCallback) =

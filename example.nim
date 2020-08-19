@@ -7,15 +7,15 @@ import os
 echo "starting"
 
 let w = newWebview(debug=true)
+defer: w.destroy()
 
-echo repr w
+w.setSize(800, 600)
+w.setTitle("Webview Example")
 
-w.init("""
-console.log("init code")
-""")
+echo repr(w)
 
+w.init("""console.log("init code")""")
 
-w.set_size(800, 600)
 
 #[
 w.`bind`("test", proc (`seq`: cstring; req: cstring; arg: pointer) =
@@ -27,16 +27,16 @@ w.`bind`("test", proc (`seq`: cstring; req: cstring; arg: pointer) =
 )
 ]#
 
-w.bind("webviewLoaded", proc (args: JsonNode): Future[JsonNode] {.async.} =
+w.bind("webviewLoaded", proc (args: JsonNode): Future[JsonNode] {.async, thread.} =
   echo "load event!"
 )
 
-proc onProgressChanged(total, progress, speed: BiggestInt) {.async.} =
+proc onProgressChanged(total, progress, speed: BiggestInt) {.async, thread.} =
   echo("Downloaded ", progress, " of ", total)
   echo("Current rate: ", speed div 1000, "kb/s")
   # w.dispatch(proc () = w.eval("console.log(" & $ %* @[progress, total]  & ")"))
 
-w.bind("test", proc (args: JsonNode): Future[JsonNode] {.async.} =
+w.bind("test", proc (args: JsonNode): Future[JsonNode] {.async, thread.} =
   echo "test! ", args.getElems
   var client = newAsyncHttpClient()
   client.onProgressChanged = onProgressChanged
@@ -47,12 +47,20 @@ w.bind("test", proc (args: JsonNode): Future[JsonNode] {.async.} =
 
 w.init("window.addEventListener('load', function (e) {webviewLoaded()}, false)")
 
-w.bind("externalNavigate", proc(args: JsonNode): Future[JsonNode] {.async.} =
+w.bind("externalNavigate", proc(args: JsonNode): Future[JsonNode] {.async, thread.} =
   let url:string = $args[0]
   echo url
 )
 
-w.dispatch(proc () = echo "dispatch")
+w.bind("simple", proc (args: JsonNode) {.thread.} =
+  echo "simple bind! no return value"
+)
+
+w.bind("terminate", proc (args: JsonNode) {.thread.} =
+  w.terminate()
+)
+
+w.dispatch(proc () = echo "DISPATCH")
 
 
 
@@ -106,7 +114,3 @@ w.run()
 # joinThread(thr)
 
 echo "completed"
-
-w.destroy()
-
-echo "destroyed"
