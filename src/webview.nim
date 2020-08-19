@@ -21,11 +21,9 @@ elif defined(macosx):
 type
   Webview* = pointer
   Hint* {.size: sizeof(cint).} = enum None, Min, Max, Fixed
-  BindCallback* = proc (args: JsonNode): Future[JsonNode]
-  BindSimpleCallback* = proc (args: JsonNode)
-  BindArg = ref object
-    w: Webview
-    name: cstring
+  BindCallback = proc (args: JsonNode): Future[JsonNode]
+  BindSimpleCallback = proc (args: JsonNode)
+  BindArg = ref tuple[w: Webview, name: cstring]
 
 var bindTable = newTable[(Webview, cstring), BindCallback]()
 
@@ -89,7 +87,7 @@ proc eval*(w: Webview; js: cstring) {.importc: "webview_eval".}
   ##      the result of the expression is ignored. Use RPC bindings if you want to
   ##      receive notifications about the results of the evaluation.
   ## ```
-proc `bind`*(w: Webview; name: cstring; fn: pointer; arg: pointer) {.importc: "webview_bind".}
+proc `bind`(w: Webview; name: cstring; fn: pointer; arg: pointer) {.importc: "webview_bind".}
   ## ```
   ##   Binds a native C callback so that it will appear under the given name as a
   ##      global JavaScript function. Internally it uses webview_init(). Callback
@@ -128,20 +126,19 @@ proc bindThread(w: Webview, name: cstring, fn: BindCallback, req: string, `seq`:
     echo "Got exception ", repr(getCurrentException()), " with message ", getCurrentExceptionMsg()
 
 proc generalBindProc(`seq`: cstring; req: cstring; arg: pointer) =
-  let bindArg = cast[BindArg](arg)
-  let
-    w = bindArg.w
-    name = bindArg.name
-  let fn = bindTable[(w, name)]
-  spawn(bindThread(w, name, fn, $req, $`seq`))
+  let key = cast[BindArg](arg)[]
+  let fn = bindTable[key]
+  spawn(bindThread(key.w, key.name, fn, $req, $`seq`))
 
-proc bindProc*(w: Webview, name: cstring, fn: BindCallback) =
-  if (w, name) in bindTable:
+proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
+  let bindArg = new(BindArg)
+  bindArg.w = w
+  bindArg.name = name
+  if bindArg[] in bindTable:
     echo "bind function " & $name & " already exists!"
     return
-  let bindArg = BindArg(w:w, name:name)
-  bindTable[(w, name)] = fn
+  bindTable[bindArg[]] = fn
   w.`bind`(name, generalBindProc, cast[pointer](bindArg))
 
-proc bindProc*(w: Webview, name: cstring, fn: BindSimpleCallback) =
-  w.bindProc(name, proc (args: JsonNode): Future[JsonNode] {.async.} = fn(args))
+proc `bind`*(w: Webview, name: cstring, fn: BindSimpleCallback) =
+  w.`bind`(name, proc (args: JsonNode): Future[JsonNode] {.async.} = fn(args))

@@ -25,7 +25,7 @@ w.`bind`("test", proc (`seq`: cstring; req: cstring; arg: pointer) =
 )
 ]#
 
-w.bindProc("webviewLoaded", proc (args: JsonNode): Future[JsonNode] {.async.} =
+w.bind("webviewLoaded", proc (args: JsonNode): Future[JsonNode] {.async.} =
   echo "load event!"
 )
 
@@ -34,7 +34,7 @@ proc onProgressChanged(total, progress, speed: BiggestInt) {.async.} =
   echo("Current rate: ", speed div 1000, "kb/s")
   # w.dispatch(proc () = w.eval("console.log(" & $ %* @[progress, total]  & ")"))
 
-w.bindProc("test", proc (args: JsonNode): Future[JsonNode] {.async.} =
+w.bind("test", proc (args: JsonNode): Future[JsonNode] {.async.} =
   echo "test! ", args.getElems
   var client = newAsyncHttpClient()
   client.onProgressChanged = onProgressChanged
@@ -45,7 +45,7 @@ w.bindProc("test", proc (args: JsonNode): Future[JsonNode] {.async.} =
 
 w.init("window.addEventListener('load', function (e) {webviewLoaded()}, false)")
 
-w.bindProc("externalNavigate", proc(args: JsonNode): Future[JsonNode] {.async.} =
+w.bind("externalNavigate", proc(args: JsonNode): Future[JsonNode] {.async.} =
   let url:string = $args[0]
   echo url
 )
@@ -61,8 +61,6 @@ var
   running = true
   thr: Thread[void]
   waiting = false
-
-
 
 proc threadFunc() {.thread.} =
   sleep(20)
