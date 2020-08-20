@@ -15,7 +15,10 @@ when defined(windows) and defined(mingw):
 else:
   {.passC: "-I" & inclDir.}
 
-{.pragma: implwebview, importc, header: "webview.h".}
+when defined(windows):
+  {.pragma: implwebview, importc.}
+else:
+  {.pragma: implwebview, importc, header: "webview.h".}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
@@ -29,7 +32,7 @@ when defined(linux):
 elif defined(windows):
   if defined(mingw):
     {.passL: "-L" & dllDir.replace($DirSep, "/").}
-    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
+    {.passC: "-DWEBVIEW_WINAPI=1", passL: "-Wl,-Bstatic -static-libstdc++ -static-libgcc -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
     {.passL: "-L" & dllDir.}
     {.passC: "-DWEBVIEW_WINAPI=1", passL: "-mwindows -lwebview -lWebView2Loader".}
