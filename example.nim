@@ -31,17 +31,17 @@ proc onProgressChanged(total, progress, speed: BiggestInt) =
   echo("Downloaded ", progress, " of ", total)
   echo("Current rate: ", speed div 1000, "kb/s")
   {.gcsafe.}:
-    w.dispatch(proc () = w.eval("updateProgress(" & $ progress & ", " & $total & ")"))
+    w.dispatch(proc () = w.eval("updateProgress(" & $ progress & ", " & $total & ", " & $speed & ")"))
 
 w.bind("downloadFile", proc (args: JsonNode): JsonNode =
   let url = args[0].getStr()
   echo "Downloading url: ", url
   var client = newHttpClient()
+  w.dispatch(proc () = w.eval("updateProgress(0, 1, 0)"))
   client.onProgressChanged = onProgressChanged
   let content = client.getContent(url)
   echo "Bytes downloaded: ", content.len
-  {.gcsafe.}:
-    w.dispatch(proc () = w.eval("updateProgress(" & $ content.len & ", " & $content.len & ")"))
+  w.dispatch(proc () = w.eval("updateProgress(" & $ content.len & ", " & $content.len & ", 0)"))
   return %* {"length": content.len}
 )
 

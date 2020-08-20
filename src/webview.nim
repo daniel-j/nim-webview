@@ -158,12 +158,13 @@ proc run*(w: Webview, sync = false) =
     sync()
 
 
-proc generalDispatchProc(_: webview_t, dispatchArg: DispatchArg) =
+proc generalDispatchProc(_: webview_t, dispatchArg: DispatchArg) {.gcsafe.} =
   let fn = dispatchArg.fn
   defer: GC_unref(dispatchArg)
-  fn()
+  {.gcsafe.}:
+    fn()
 
-proc dispatch*(w: Webview; fn: DispatchCallback) =
+proc dispatch*(w: Webview; fn: DispatchCallback) {.gcsafe.} =
   let dispatchArg = new(DispatchArg)
   dispatchArg.fn = fn
 

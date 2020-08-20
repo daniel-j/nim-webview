@@ -1,26 +1,27 @@
 import dom
 import jsffi
 import asyncjs
+import math
 
 proc then[T](p: PromiseJs, resolve: proc(val:T): PromiseJs|JsObject): PromiseJs {.importcpp, discardable.}
 proc then[T](p: PromiseJs, resolve: proc(val:T)): PromiseJs {.importcpp, discardable.}
 
 proc test(data: JsObject = nil): PromiseJs {.importc.}
-
 proc externalNavigate(data: JsObject) {.importc.}
+proc downloadFile(url: cstring) {.importc.}
+
+proc updateProgress(progress, total, speed: int) {.exportc.} =
+  let downloadProgress = document.getElementById("downloadProgress")
+  downloadProgress.value = $progress
+  downloadProgress.setAttribute("max", $total)
+  let downloadProgressStatus = document.getElementById("downloadProgressStatus")
+  downloadProgressStatus.textContent = $round(float(progress / total) * 100) & "%"
 
 test(JsObject{"data": [1, 2, 3]}).then(proc (val: cstring) =
   echo "got something: ", val
 )
 
-proc updateProgress(progress, total: int) {.exportc.} =
-  echo progress
-  echo total
-  let downloadProgress = document.getElementById("downloadProgress")
-  downloadProgress.value = $progress
-  downloadProgress.setAttribute("max", $total)
-
-window.addEventListener("DOMContentLoaded", (proc (ev: Event) =
+window.addEventListener("DOMContentLoaded", (proc (_: Event) =
   document.addEventListener("click", (proc (ev: Event) =
     let href = ev.target.getAttribute("href")
     if not href.isNull:
@@ -31,4 +32,9 @@ window.addEventListener("DOMContentLoaded", (proc (ev: Event) =
         target = "_self"
       externalNavigate(JsObject{"href": href, "target": target})
   ), true)
+
+  document.getElementById("btn10MB").onclick = proc (_: Event) =
+    downloadFile("http://speedtest.tele2.net/10MB.zip")
+  document.getElementById("btn100MB").onclick = proc (_: Event) =
+    downloadFile("http://speedtest.tele2.net/100MB.zip")
 ))
