@@ -6,8 +6,16 @@
   </head>
   <body>
     <h1>Webview Example</h1>
-    <button type="button" onclick="test('btn')">Test</button>
-    <button type="button" onclick="terminate()">Terminate</button>
-    <script src="example.js"></script>
+    <button type="button" onclick="downloadFile('http://speedtest.tele2.net/10MB.zip')">Download 10MB file</button>
+    <button type="button" onclick="downloadFile('http://speedtest.tele2.net/100MB.zip')">Download 100MB file</button>
+    <br/>
+    <progress id="downloadProgress"></progress>
+    <br/>
+    <a href="https://nim-lang.org" target="_blank">Nim website</a>
+    <br/>
+    <br/>
+    <button type="button" onclick="terminate()">Terminate webview</button>
+
+    <script src="example_js.js"></script>
   </body>
 </html>

@@ -30,26 +30,39 @@ w.bind("webviewLoaded", proc (args: JsonNode): JsonNode =
 proc onProgressChanged(total, progress, speed: BiggestInt) =
   echo("Downloaded ", progress, " of ", total)
   echo("Current rate: ", speed div 1000, "kb/s")
-  # w.dispatch(proc () = w.eval("console.log(" & $ %* @[progress, total]  & ")"))
+  {.gcsafe.}:
+    w.dispatch(proc () = w.eval("updateProgress(" & $ progress & ", " & $total & ")"))
 
-w.bind("test", proc (args: JsonNode): JsonNode =
-  echo "test! ", args.getElems
+w.bind("downloadFile", proc (args: JsonNode): JsonNode =
+  let url = args[0].getStr()
+  echo "Downloading url: ", url
   var client = newHttpClient()
   client.onProgressChanged = onProgressChanged
-  let content = client.getContent("http://speedtest.tele2.net/10MB.zip")
-  echo "got content ", content.len
+  let content = client.getContent(url)
+  echo "Bytes downloaded: ", content.len
+  {.gcsafe.}:
+    w.dispatch(proc () = w.eval("updateProgress(" & $ content.len & ", " & $content.len & ")"))
   return %* {"length": content.len}
 )
 
 w.init("window.addEventListener('load', function (e) {webviewLoaded()}, false)")
 
 w.bind("externalNavigate", proc(args: JsonNode): JsonNode =
-  let url:string = $args[0]
-  echo url
+  echo "clicked something with a href!"
+  let href = args[0]["href"]
+  let target = args[0]["target"]
+  echo "href: ", href
+  echo "target: ", target
 )
 
 w.bind("simple", proc (args: JsonNode) =
   echo "simple bind! no return value"
+)
+
+w.bind("test", proc (args: JsonNode): JsonNode =
+  echo "test! ", args
+
+  return %* "a response"
 )
 
 w.bind("terminate", proc (args: JsonNode) =
