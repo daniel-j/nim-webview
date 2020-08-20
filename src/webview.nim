@@ -23,7 +23,6 @@ elif defined(windows):
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1 -x objective-c", passL: "-std=c++11 -framework WebKit".}
 
-
 type
   webview_t = pointer
   WebviewWindow* = pointer
@@ -148,6 +147,11 @@ proc set_title*(w: Webview, title: string) =
 
 proc set_size*(w: Webview, width: Positive, height: Positive, hints: Hint = None) =
   w.w.set_size(width.cint, height.cint, hints.cint)
+
+func setBorderless*(w: Webview, decorated: bool) =
+  when defined(linux):
+    proc gtk_window_set_decorated(window: WebviewWindow, setting: bool) {.header: "<gtk/gtk.h>".}
+    gtk_window_set_decorated(w.window, not decorated)
 
 proc navigate*(w: Webview, url: string) =
   w.w.navigate(url)
