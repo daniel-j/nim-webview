@@ -3,8 +3,14 @@ import json
 import threadpool
 import hashes
 import os
+import strutils
 
-{.passC: "-I" & currentSourcePath() /../ "" /../ "webview".}
+const inclDir = currentSourcePath() /../ "" /../ "webview"
+
+when defined(windows) and defined(mingw):
+  {.passC: "-I" & inclDir.replace($DirSep, "/").}
+else:
+  {.passC: "-I" & inclDir.}
 {.pragma: implwebview, importc, header: "webview.h".}
 
 when defined(linux):
