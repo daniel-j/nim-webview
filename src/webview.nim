@@ -2,8 +2,9 @@
 import json
 import threadpool
 import hashes
+import os
 
-{.passC: "-Iwebview".}
+{.passC: "-I" & currentSourcePath() /../ "" /../ "webview".}
 {.pragma: implwebview, importc, cdecl, header: "webview.h".}
 
 when defined(linux):
