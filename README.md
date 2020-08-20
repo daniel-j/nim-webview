@@ -1,8 +1,10 @@
 # nim-webview
 
-A Nim wrapper for [webview](https://github.com/webview/webview) v0.10.0.
+A Nim wrapper for [webview](https://github.com/webview/webview) v0.10.0. Not yet ready for use, unstable and in development.
 
-Uses a submodule, so to clone you need to run `git clone --recurse-submodules https://github.com/daniel-j/nim-webview.git`
+Uses a submodule, so to clone you need to run
+
+`git clone --recurse-submodules https://github.com/daniel-j/nim-webview.git`
 
 ## Install dependencies
 
