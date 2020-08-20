@@ -12,6 +12,8 @@ w.setTitle("Webview Example")
 
 w.init("""console.log("init code")""")
 
+w.setBorderless(false)
+
 
 #[
 w.`bind`("test", proc (`seq`: cstring; req: cstring; arg: pointer) =
