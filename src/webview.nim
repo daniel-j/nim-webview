@@ -42,7 +42,7 @@ type
   BindArg = ref tuple[w: Webview, name: cstring, fn: BindCallback]
   
 
-proc webview_create(debug: cint = 0; window: pointer): webview_t {.importc.}
+proc webview_create(debug: cint; window: pointer): webview_t {.importc.}
   ## ```
   ##   Creates a new webview instance. If debug is non-zero - developer tools will
   ##      be enabled (if the platform supports them). Window parameter can be a
