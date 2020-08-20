@@ -6,11 +6,15 @@ import os
 import strutils
 
 const inclDir = currentSourcePath() /../ "" /../ "webview"
+const dllDir = currentSourcePath() /../ "" /../ "webview" / "dll" / "x64"
+static:
+  echo dllDir
 
 when defined(windows) and defined(mingw):
   {.passC: "-I" & inclDir.replace($DirSep, "/").}
 else:
   {.passC: "-I" & inclDir.}
+
 {.pragma: implwebview, importc, header: "webview.h".}
 
 when defined(linux):
@@ -24,9 +28,11 @@ when defined(linux):
   {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: lflags & " -static-libstdc++ -static-libgcc".}
 elif defined(windows):
   if defined(mingw):
-    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
+    {.passL: "-L" & dllDir.replace($DirSep, "/").}
+    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
-    {.passC: "-DWEBVIEW_WINAPI=1", passL: "-mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
+    {.passL: "-L" & dllDir.}
+    {.passC: "-DWEBVIEW_WINAPI=1", passL: "-mwindows -lwebview -lWebView2Loader".}
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1 -x objective-c", passL: "-std=c++11 -framework WebKit".}
 
