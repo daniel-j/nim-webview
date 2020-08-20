@@ -204,5 +204,4 @@ proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   w.w.`bind`(name, generalBindProc, bindArg)
 
 proc `bind`*(w: Webview, name: cstring, fn: BindSimpleCallback) =
-  {.gcsafe.}:
-    w.`bind`(name, proc (args: JsonNode): JsonNode = fn(args))
+  w.`bind`(name, proc (args: JsonNode): JsonNode = fn(args))
