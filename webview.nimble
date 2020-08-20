@@ -1,7 +1,7 @@
 # Package
 
 version       = "0.1.0"
-author        = "daniel-j"
+author        = "djazz"
 description   = "Nim wrapper for the webview library"
 license       = "MIT"
 srcDir        = "src"
