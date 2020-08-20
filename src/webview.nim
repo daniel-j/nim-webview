@@ -4,7 +4,7 @@ import threadpool
 import hashes
 
 {.passC: "-Iwebview".}
-{.pragma: implwebview, importc, header: "webview.h".}
+{.pragma: implwebview, importc, cdecl, header: "webview.h".}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
