@@ -5,7 +5,7 @@ import hashes
 import os
 
 {.passC: "-I" & currentSourcePath() /../ "" /../ "webview".}
-{.pragma: implwebview, importc, cdecl, header: "webview.h".}
+{.pragma: implwebview, importc, nodecl, header: "webview.h".}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
