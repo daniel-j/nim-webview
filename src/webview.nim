@@ -14,7 +14,7 @@ when defined(linux):
     if cflagscode != 0 or lflagscode != 0:
       echo cflags, "\n", lflags
       raise newException(OSError, "Required dependencies not found!")
-  {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: lflags.}
+  {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: lflags & " -static-libstdc++ -static-libgcc".}
 elif defined(windows):
   if defined(mingw):
     {.passC: "-DWEBVIEW_WINAPI=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
