@@ -25,12 +25,15 @@ elif defined(macosx):
 
 
 type
-  webview_t* = pointer
-  Webview = object
+  webview_t = pointer
+  WebviewWindow* = pointer
+
+  Webview* = object
     w*: webview_t
     debug*: bool
-    window*: pointer
+    window*: WebviewWindow
     bindArgs: seq[BindArg]
+
   Hint* {.size: sizeof(cint).} = enum None, Min, Max, Fixed
 
   DispatchCallback* = proc ()
@@ -131,7 +134,7 @@ proc destroy*(w: Webview) =
 proc terminate*(w: Webview) =
   w.w.terminate()
 
-proc get_window*(w: Webview): pointer =
+proc get_window*(w: Webview): WebviewWindow =
   w.w.get_window()
 
 proc init*(w: Webview, js: string) =
