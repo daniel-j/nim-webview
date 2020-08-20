@@ -3,8 +3,8 @@ import json
 import threadpool
 import hashes
 
-when not defined(windows):
-  {.compile: "../webview/webview.cc".}
+{.passC: "-Iwebview".}
+{.pragma: implwebview, importc, header: "webview.h".}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
@@ -17,7 +17,7 @@ when defined(linux):
   {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: lflags & " -static-libstdc++ -static-libgcc".}
 elif defined(windows):
   if defined(mingw):
-    {.passC: "-DWEBVIEW_WINAPI=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
+    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
   else:
     {.passC: "-DWEBVIEW_WINAPI=1", passL: "-mwindows -L./webview/dll/x64 -lwebview -lWebView2Loader".}
 elif defined(macosx):
@@ -42,7 +42,7 @@ type
   BindArg = ref tuple[w: Webview, name: cstring, fn: BindCallback]
   
 
-proc webview_create(debug: cint; window: pointer): webview_t {.importc.}
+proc webview_create(debug: cint; window: pointer): webview_t {.implwebview.}
   ## ```
   ##   Creates a new webview instance. If debug is non-zero - developer tools will
   ##      be enabled (if the platform supports them). Window parameter can be a
@@ -51,58 +51,58 @@ proc webview_create(debug: cint; window: pointer): webview_t {.importc.}
   ##      Depending on the platform, a GtkWindow, NSWindow or HWND pointer can be
   ##      passed here.
   ## ```
-proc webview_destroy(w: webview_t) {.importc.}
+proc webview_destroy(w: webview_t) {.implwebview.}
   ## ```
   ##   Destroys a webview and closes the native window.
   ## ```
-proc webview_run(w: webview_t) {.importc.}
+proc webview_run(w: webview_t) {.implwebview.}
   ## ```
   ##   Runs the main loop until it's terminated. After this function exits - you
   ##      must destroy the webview.
   ## ```
-proc webview_terminate(w: webview_t) {.importc.}
+proc webview_terminate(w: webview_t) {.implwebview.}
   ## ```
   ##   Stops the main loop. It is safe to call this function from another other
   ##      background thread.
   ## ```
-proc webview_dispatch(w: webview_t; fn: pointer; arg: DispatchArg) {.importc.}
+proc webview_dispatch(w: webview_t; fn: pointer; arg: DispatchArg) {.implwebview.}
   ## ```
   ##   Posts a function to be executed on the main thread. You normally do not need
   ##      to call this function, unless you want to tweak the native window.
   ## ```
-proc webview_get_window(w: webview_t): pointer {.importc.}
+proc webview_get_window(w: webview_t): pointer {.implwebview.}
   ## ```
   ##   Returns a native window handle pointer. When using GTK backend the pointer
   ##      is GtkWindow pointer, when using Cocoa backend the pointer is NSWindow
   ##      pointer, when using Win32 backend the pointer is HWND pointer.
   ## ```
-proc webview_set_title(w: webview_t; title: cstring) {.importc.}
+proc webview_set_title(w: webview_t; title: cstring) {.implwebview.}
   ## ```
   ##   Updates the title of the native window. Must be called from the UI thread.
   ## ```
-proc webview_set_size(w: webview_t; width: cint; height: cint; hints: cint) {.importc.}
+proc webview_set_size(w: webview_t; width: cint; height: cint; hints: cint) {.implwebview.}
   ## ```
   ##   Updates native window size. See WEBVIEW_HINT constants.
   ## ```
-proc webview_navigate(w: webview_t; url: cstring) {.importc.}
+proc webview_navigate(w: webview_t; url: cstring) {.implwebview.}
   ## ```
   ##   Navigates webview to the given URL. URL may be a data URI, i.e.
   ##      "data:text/text,<html>...</html>". It is often ok not to url-encode it
   ##      properly, webview will re-encode it for you.
   ## ```
-proc webview_init(w: webview_t; js: cstring) {.importc.}
+proc webview_init(w: webview_t; js: cstring) {.implwebview.}
   ## ```
   ##   Injects JavaScript code at the initialization of the new page. Every time
   ##      the webview will open a the new page - this initialization code will be
   ##      executed. It is guaranteed that code is executed before window.onload.
   ## ```
-proc webview_eval(w: webview_t; js: cstring) {.importc.}
+proc webview_eval(w: webview_t; js: cstring) {.implwebview.}
   ## ```
   ##   Evaluates arbitrary JavaScript code. Evaluation happens asynchronously, also
   ##      the result of the expression is ignored. Use RPC bindings if you want to
   ##      receive notifications about the results of the evaluation.
   ## ```
-proc webview_bind(w: webview_t; name: cstring; fn: pointer; arg: BindArg) {.importc.}
+proc webview_bind(w: webview_t; name: cstring; fn: pointer; arg: BindArg) {.implwebview.}
   ## ```
   ##   Binds a native C callback so that it will appear under the given name as a
   ##      global JavaScript function. Internally it uses webview_init(). Callback
@@ -110,7 +110,7 @@ proc webview_bind(w: webview_t; name: cstring; fn: pointer; arg: BindArg) {.impo
   ##      string is a JSON array of all the arguments passed to the JavaScript
   ##      function.
   ## ```
-proc webview_return(w: webview_t; `seq`: cstring; status: cint; result: cstring) {.importc.}
+proc webview_return(w: webview_t; `seq`: cstring; status: cint; result: cstring) {.implwebview.}
   ## ```
   ##   Allows to return a value from the native binding. Original request pointer
   ##      must be provided to help internal RPC engine match requests with responses.
