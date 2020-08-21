@@ -27,7 +27,7 @@ when defined(linux):
       raise newException(OSError, "Required dependencies not found!")
   {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: "-static-libstdc++ -static-libgcc " & lflags.}
 elif defined(windows):
-  if defined(mingw):
+  when defined(mingw):
     {.passL: "-L" & dllDir.replace($DirSep, "/").}
     {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
