@@ -147,22 +147,17 @@ proc destroy*(w: Webview) =
 proc terminate*(w: Webview) =
   w.w.webview_terminate()
 
-proc get_window*(w: Webview): WebviewWindow =
+proc getWindow*(w: Webview): WebviewWindow =
   w.w.webview_get_window()
 
 proc init*(w: Webview, js: string) =
   w.w.webview_init(js)
 
-proc set_title*(w: Webview, title: string) =
+proc setTitle*(w: Webview, title: string) =
   w.w.webview_set_title(title)
 
-proc set_size*(w: Webview, width: Positive, height: Positive, hints: Hint = None) =
+proc setSize*(w: Webview, width: Positive, height: Positive, hints: Hint = None) =
   w.w.webview_set_size(width.cint, height.cint, hints.cint)
-
-func setBorderless*(w: Webview, borderless: bool) =
-  when defined(linux):
-    proc gtk_window_set_decorated(window: WebviewWindow, setting: bool) {.header: "<gtk/gtk.h>".}
-    gtk_window_set_decorated(w.window, not borderless)
 
 proc navigate*(w: Webview, url: string) =
   w.w.webview_navigate(url)
