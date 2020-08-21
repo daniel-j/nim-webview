@@ -8,4 +8,4 @@ echo "Running tests"
 nimble test
 
 echo "Building examples"
-nimble task examples
+nimble examples

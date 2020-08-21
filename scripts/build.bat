@@ -12,7 +12,7 @@ cd /D %src_dir%
 set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
 
 echo Running tests
-nimble test || exit \b
+nimble test || exit /B
 
 echo Building examples
-nimble task examples
+nimble examples || exit /B
