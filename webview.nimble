@@ -12,12 +12,12 @@ backend       = "cpp"
 
 requires "nim >= 1.0.0"
 
-task example, "example":
-  exec "nimble js example_js.nim"
+task examples, "examples":
+  exec "nimble js examples/demo/example_js.nim"
   exec "echo"
-  exec "nimble cpp --threads:on -d:ssl --gc:arc --app:gui example.nim"
+  exec "nimble compile --app:console --threads:on --gc:arc examples/demo/example.nim"
 
-task examplemingw, "example mingw":
-  exec "nimble js example_js.nim"
+task examplesmingw, "examples (mingw)":
+  exec "nimble js examples/demo/example_js.nim"
   exec "echo"
-  exec "WINEPATH=webview/dll/x64 nimble cpp --threads:on -d:ssl --gc:arc -d:mingw example.nim" # --app:gui
+  exec "WINEPATH=webview/dll/x64 nimble compile --app:console --threads:on --gc:arc -d:mingw examples/demo/example.nim"

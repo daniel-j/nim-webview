@@ -1,7 +1,8 @@
-import src/webview
+import ./webview
 import json
 import httpclient
 import os
+import strutils
 
 echo "starting"
 
@@ -14,16 +15,6 @@ w.init("""console.log("init code")""")
 
 w.setBorderless(false)
 
-
-#[
-w.`bind`("test", proc (`seq`: cstring; req: cstring; arg: pointer) =
-  echo "test success!"
-  echo `seq`
-  echo parseJson $req
-  echo repr arg
-  w.return(`seq`, 0, "[12345, 4567]")
-)
-]#
 
 w.bind("webviewLoaded", proc (args: JsonNode): JsonNode =
   echo "load event!"
@@ -71,10 +62,10 @@ w.bind("terminate", proc (args: JsonNode) =
   w.terminate()
 )
 
-# w.dispatch(proc () = echo "DISPATCH")
+w.dispatch(proc () = echo "DISPATCH")
 
 
-let uri = "file://" & getCurrentDir() / "example.html"
+let uri = "file://" & (getAppDir() / "example.html").replace($DirSep, "/")
 echo uri
 
 w.navigate(uri)

@@ -7,18 +7,13 @@ import strutils
 
 const inclDir = currentSourcePath() /../ "" /../ "webview"
 const dllDir = currentSourcePath() /../ "" /../ "webview" / "dll" / "x64"
-static:
-  echo dllDir
 
 when defined(windows) and defined(mingw):
   {.passC: "-I" & inclDir.replace($DirSep, "/").}
 else:
   {.passC: "-I" & inclDir.}
 
-when defined(windows):
-  {.pragma: implwebview, importc.}
-else:
-  {.pragma: implwebview, importc, header: "webview.h".}
+{.pragma: implwebview, importc, header: "webview.h".}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
@@ -28,11 +23,11 @@ when defined(linux):
     if cflagscode != 0 or lflagscode != 0:
       echo cflags, "\n", lflags
       raise newException(OSError, "Required dependencies not found!")
-  {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: lflags & " -static-libstdc++ -static-libgcc".}
+  {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: "-static-libstdc++ -static-libgcc " & lflags.}
 elif defined(windows):
   if defined(mingw):
     {.passL: "-L" & dllDir.replace($DirSep, "/").}
-    {.passC: "-DWEBVIEW_WINAPI=1", passL: "-Wl,-Bstatic -static-libstdc++ -static-libgcc -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
+    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
     {.passL: "-L" & dllDir.}
     {.passC: "-DWEBVIEW_WINAPI=1", passL: "-mwindows -lwebview -lWebView2Loader".}
@@ -40,7 +35,7 @@ elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1 -x objective-c", passL: "-std=c++11 -framework WebKit".}
 
 type
-  webview_t = pointer
+  webview_t* = pointer
   WebviewWindow* = pointer
 
   Webview* = object
@@ -58,7 +53,7 @@ type
   BindArg = ref tuple[w: Webview, name: cstring, fn: BindCallback]
   
 
-proc webview_create(debug: cint; window: pointer): webview_t {.implwebview.}
+proc webview_create*(debug: cint; window: pointer): webview_t {.implwebview.}
   ## ```
   ##   Creates a new webview instance. If debug is non-zero - developer tools will
   ##      be enabled (if the platform supports them). Window parameter can be a
@@ -67,58 +62,58 @@ proc webview_create(debug: cint; window: pointer): webview_t {.implwebview.}
   ##      Depending on the platform, a GtkWindow, NSWindow or HWND pointer can be
   ##      passed here.
   ## ```
-proc webview_destroy(w: webview_t) {.implwebview.}
+proc webview_destroy*(w: webview_t) {.implwebview.}
   ## ```
   ##   Destroys a webview and closes the native window.
   ## ```
-proc webview_run(w: webview_t) {.implwebview.}
+proc webview_run*(w: webview_t) {.implwebview.}
   ## ```
   ##   Runs the main loop until it's terminated. After this function exits - you
   ##      must destroy the webview.
   ## ```
-proc webview_terminate(w: webview_t) {.implwebview.}
+proc webview_terminate*(w: webview_t) {.implwebview.}
   ## ```
   ##   Stops the main loop. It is safe to call this function from another other
   ##      background thread.
   ## ```
-proc webview_dispatch(w: webview_t; fn: pointer; arg: DispatchArg) {.implwebview.}
+proc webview_dispatch*(w: webview_t; fn: pointer; arg: pointer) {.implwebview.}
   ## ```
   ##   Posts a function to be executed on the main thread. You normally do not need
   ##      to call this function, unless you want to tweak the native window.
   ## ```
-proc webview_get_window(w: webview_t): pointer {.implwebview.}
+proc webview_get_window*(w: webview_t): pointer {.implwebview.}
   ## ```
   ##   Returns a native window handle pointer. When using GTK backend the pointer
   ##      is GtkWindow pointer, when using Cocoa backend the pointer is NSWindow
   ##      pointer, when using Win32 backend the pointer is HWND pointer.
   ## ```
-proc webview_set_title(w: webview_t; title: cstring) {.implwebview.}
+proc webview_set_title*(w: webview_t; title: cstring) {.implwebview.}
   ## ```
   ##   Updates the title of the native window. Must be called from the UI thread.
   ## ```
-proc webview_set_size(w: webview_t; width: cint; height: cint; hints: cint) {.implwebview.}
+proc webview_set_size*(w: webview_t; width: cint; height: cint; hints: cint) {.implwebview.}
   ## ```
   ##   Updates native window size. See WEBVIEW_HINT constants.
   ## ```
-proc webview_navigate(w: webview_t; url: cstring) {.implwebview.}
+proc webview_navigate*(w: webview_t; url: cstring) {.implwebview.}
   ## ```
   ##   Navigates webview to the given URL. URL may be a data URI, i.e.
   ##      "data:text/text,<html>...</html>". It is often ok not to url-encode it
   ##      properly, webview will re-encode it for you.
   ## ```
-proc webview_init(w: webview_t; js: cstring) {.implwebview.}
+proc webview_init*(w: webview_t; js: cstring) {.implwebview.}
   ## ```
   ##   Injects JavaScript code at the initialization of the new page. Every time
   ##      the webview will open a the new page - this initialization code will be
   ##      executed. It is guaranteed that code is executed before window.onload.
   ## ```
-proc webview_eval(w: webview_t; js: cstring) {.implwebview.}
+proc webview_eval*(w: webview_t; js: cstring) {.implwebview.}
   ## ```
   ##   Evaluates arbitrary JavaScript code. Evaluation happens asynchronously, also
   ##      the result of the expression is ignored. Use RPC bindings if you want to
   ##      receive notifications about the results of the evaluation.
   ## ```
-proc webview_bind(w: webview_t; name: cstring; fn: pointer; arg: BindArg) {.implwebview.}
+proc webview_bind*(w: webview_t; name: cstring; fn: pointer; arg: pointer) {.implwebview.}
   ## ```
   ##   Binds a native C callback so that it will appear under the given name as a
   ##      global JavaScript function. Internally it uses webview_init(). Callback
@@ -126,7 +121,7 @@ proc webview_bind(w: webview_t; name: cstring; fn: pointer; arg: BindArg) {.impl
   ##      string is a JSON array of all the arguments passed to the JavaScript
   ##      function.
   ## ```
-proc webview_return(w: webview_t; `seq`: cstring; status: cint; result: cstring) {.implwebview.}
+proc webview_return*(w: webview_t; `seq`: cstring; status: cint; result: cstring) {.implwebview.}
   ## ```
   ##   Allows to return a value from the native binding. Original request pointer
   ##      must be provided to help internal RPC engine match requests with responses.
@@ -155,9 +150,6 @@ proc get_window*(w: Webview): WebviewWindow =
 proc init*(w: Webview, js: string) =
   w.w.webview_init(js)
 
-proc eval*(w: Webview, js: string) =
-  w.w.webview_eval(js)
-
 proc set_title*(w: Webview, title: string) =
   w.w.webview_set_title(title)
 
@@ -178,7 +170,8 @@ proc run*(w: Webview, sync = false) =
     sync()
 
 
-proc generalDispatchProc(_: webview_t, dispatchArg: DispatchArg) {.gcsafe.} =
+proc generalDispatchProc(_: webview_t, arg: pointer) {.gcsafe.} =
+  let dispatchArg = cast[DispatchArg](arg)
   let fn = dispatchArg.fn
   defer: GC_unref(dispatchArg)
   {.gcsafe.}:
@@ -189,8 +182,10 @@ proc dispatch*(w: Webview; fn: DispatchCallback) {.gcsafe.} =
   dispatchArg.fn = fn
 
   GC_ref(dispatchArg)
-  w.w.webview_dispatch(generalDispatchProc, dispatchArg)
+  w.w.webview_dispatch(generalDispatchProc, cast[pointer](dispatchArg))
 
+proc eval*(w: Webview, js: string) =
+  w.dispatch(proc () = w.w.webview_eval(js))
 
 proc `return`(w: webview_t, `seq`: string, success: bool, result: JsonNode) =
   if result.isNil:
@@ -211,7 +206,8 @@ proc bindThread(w: Webview, name: cstring, fn: BindCallback, req: string, `seq`:
     w.dispatch(proc() = w.w.return(`seq`, false, %* {"error": repr(getCurrentException()), "message": getCurrentExceptionMsg()}))
     echo "Got exception ", repr(getCurrentException()), " with message ", getCurrentExceptionMsg()
 
-proc generalBindProc(`seq`: cstring; req: cstring; bindArg: BindArg) =
+proc generalBindProc(`seq`: cstring; req: cstring; arg: pointer) =
+  let bindArg = cast[BindArg](arg)
   let w = bindArg.w
   let name = bindArg.name
   let fn = bindArg.fn
@@ -225,7 +221,7 @@ proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   bindArg.fn = fn
 
   GC_ref(bindArg)
-  w.w.webview_bind(name, generalBindProc, bindArg)
+  w.w.webview_bind(name, generalBindProc, cast[pointer](bindArg))
 
 proc `bind`*(w: Webview, name: cstring, fn: BindSimpleCallback) =
   w.`bind`(name, proc (args: JsonNode): JsonNode = fn(args))
