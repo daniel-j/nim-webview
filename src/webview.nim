@@ -184,10 +184,10 @@ proc eval*(w: Webview, js: string) {.gcsafe.} =
 
 proc `return`*(w: Webview, id: string, success: bool, result: JsonNode) =
   if result.isNil:
-    echo "return: nil"
+    # echo "return: nil"
     w.w.webview_return(id, (not success).cint, "null")
   else:
-    echo "return: " & $result
+    # echo "return: " & $result
     w.w.webview_return(id, (not success).cint, $result)
 
 
