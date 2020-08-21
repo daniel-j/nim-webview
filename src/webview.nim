@@ -32,7 +32,7 @@ elif defined(windows):
     {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
     {.passL: "-L" & dllDir.}
-    {.passC: "-DWEBVIEW_WINAPI=1", passL: "-mwindows -lwebview -lWebView2Loader".}
+    {.passC: "-DWEBVIEW_WINAPI=1 /std:c++17", passL: "-mwindows -lwebview -lWebView2Loader".}
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1 -x objective-c", passL: "-std=c++11 -framework WebKit".}
 
