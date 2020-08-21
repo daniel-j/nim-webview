@@ -4,12 +4,12 @@ import webview
 ## TEST: use C API to create a window, run app and terminate it.
 ## =================================================================
 
-proc cb_assert_arg(w: webview_t, arg: pointer) =
+proc cb_assert_arg(w: webview_t, arg: pointer) {.cdecl.} =
   assert(w != nil)
   let str = cast[cstring](arg)
   assert(str == "arg")
 
-proc cb_terminate(w: webview_t, arg: pointer) =
+proc cb_terminate(w: webview_t, arg: pointer) {.cdecl.} =
   assert(arg == nil);
   webview_terminate(w)
 

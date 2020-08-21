@@ -16,7 +16,7 @@ when defined(windows) and defined(mingw):
 else:
   {.passC: "-I" & inclDir.}
 
-{.pragma: implwebview, importc, header: "webview.h".}
+{.pragma: implwebview, importc, cdecl, header: "webview.h".}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
@@ -80,7 +80,7 @@ proc webview_terminate*(w: webview_t) {.implwebview.}
   ##   Stops the main loop. It is safe to call this function from another other
   ##      background thread.
   ## ```
-proc webview_dispatch*(w: webview_t; fn: pointer; arg: pointer) {.implwebview.}
+proc webview_dispatch*(w: webview_t; fn: proc (w: webview_t, arg: pointer) {.cdecl.}; arg: pointer) {.implwebview.}
   ## ```
   ##   Posts a function to be executed on the main thread. You normally do not need
   ##      to call this function, unless you want to tweak the native window.
@@ -117,7 +117,7 @@ proc webview_eval*(w: webview_t; js: cstring) {.implwebview.}
   ##      the result of the expression is ignored. Use RPC bindings if you want to
   ##      receive notifications about the results of the evaluation.
   ## ```
-proc webview_bind*(w: webview_t; name: cstring; fn: pointer; arg: pointer) {.implwebview.}
+proc webview_bind*(w: webview_t; name: cstring; fn: proc (id: cstring, req: cstring, arg: pointer) {.cdecl.}; arg: pointer) {.implwebview.}
   ## ```
   ##   Binds a native C callback so that it will appear under the given name as a
   ##      global JavaScript function. Internally it uses webview_init(). Callback
@@ -125,7 +125,7 @@ proc webview_bind*(w: webview_t; name: cstring; fn: pointer; arg: pointer) {.imp
   ##      string is a JSON array of all the arguments passed to the JavaScript
   ##      function.
   ## ```
-proc webview_return*(w: webview_t; `seq`: cstring; status: cint; result: cstring) {.implwebview.}
+proc webview_return*(w: webview_t; id: cstring; status: cint; result: cstring) {.implwebview.}
   ## ```
   ##   Allows to return a value from the native binding. Original request pointer
   ##      must be provided to help internal RPC engine match requests with responses.
@@ -166,7 +166,7 @@ proc navigate*(w: Webview, url: string) =
 proc run*(w: Webview) =
   w.w.webview_run()
 
-proc generalDispatchProc(_: webview_t, arg: pointer) {.gcsafe.} =
+proc generalDispatchProc(_: webview_t, arg: pointer) {.gcsafe, cdecl.} =
   let dispatchArg = cast[DispatchArg](arg)
   let fn = dispatchArg.fn
   defer: GC_unref(dispatchArg)
@@ -192,6 +192,12 @@ proc `return`*(w: Webview, id: string, success: bool, result: JsonNode) =
     w.w.webview_return(id, (not success).cint, $result)
 
 
+proc generalBindProc(id: cstring, req: cstring, arg: pointer) {.cdecl.} =
+  let bindArg = cast[BindArg](arg)
+  let fn = bindArg.fn
+
+  let args = parseJson($req)
+  fn($id, args)
 
 proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   let bindArg = new(BindArg)
@@ -200,12 +206,7 @@ proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   bindArg.fn = fn
 
   GC_ref(bindArg)
-  w.w.webview_bind(name, (proc (`seq`: cstring, req: cstring, arg: pointer) =
-    let bindArg = cast[BindArg](arg)
-    let fn = bindArg.fn
-
-    let args = parseJson($req)
-    fn($`seq`, args)), cast[pointer](bindArg))
+  w.w.webview_bind(name, generalBindProc, cast[pointer](bindArg))
 
 proc `bind`*(w: Webview, name: cstring, fn: BindCallbackReturn) =
   w.`bind`(name, proc (id: string, args: JsonNode) =
