@@ -9,6 +9,7 @@ when defined(windows) and defined(mingw):
 const inclDir = currentSourcePath() /../ "" /../ "webview"
 when defined(windows):
   const dllDir = currentSourcePath() /../ "" /../ "webview" / "dll" / "x64"
+  const webviewScriptDir = currentSourcePath() /../ "" /../ "webview" / "script"
 
 when defined(windows) and defined(mingw):
   {.passC: "-I" & inclDir.replace($DirSep, "/").}
@@ -32,7 +33,7 @@ elif defined(windows):
     {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
     {.passL: "-L" & dllDir.}
-    {.passC: "-DWEBVIEW_WINAPI=1 /std:c++17", passL: "-mwindows -lwebview -lWebView2Loader".}
+    {.passC: "-DWEBVIEW_WINAPI=1 /std:c++17 -I" & webviewScriptDir, passL: "-mwindows -lwebview -lWebView2Loader".}
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1 -std=c++17 -x objective-c", passL: "-std=c++17 -framework WebKit".}
 
