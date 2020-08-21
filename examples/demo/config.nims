@@ -7,4 +7,4 @@ when not defined(js):
   when defined(macosx):
     switch("cc", "clang")
   elif defined(windows) and not defined(mingw):
-    switch("cc", "vcc")
+    switch("cc", "clangcl")
