@@ -1,6 +1,6 @@
 switch("path", "$projectDir/../src")
 
-switch("cc", "clang")
+# switch("cc", "clang")
 
 when defined(macosx):
   switch("cc", "clang")

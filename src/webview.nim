@@ -15,8 +15,9 @@ when defined(windows) and defined(mingw):
   {.passC: "-I" & inclDir.replace($DirSep, "/").}
 else:
   {.passC: "-I" & inclDir.}
+  {.compile: currentSourcePath() /../ "" /../ "webview" / "webview.cc".}
 
-{.pragma: implwebview, importc, cdecl, header: "webview.h".}
+{.pragma: implwebview, importc, cdecl.}
 
 when defined(linux):
   const libs = "gtk+-3.0 webkit2gtk-4.0"
