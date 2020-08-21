@@ -37,5 +37,7 @@ jobs:
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: stable
+      - name: Build webview library
+        run: ./webview/script/build.bat
       - name: Run tests and build examples
         run: ./scripts/build.bat
