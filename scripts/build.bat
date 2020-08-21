@@ -27,11 +27,15 @@ if not exist "%vc_dir%\Common7\Tools\vsdevcmd.bat" (
 )
 echo Found %vc_dir%
 
-cd /D %src_dir%
-set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
+REM call "%vc_dir%\Common7\Tools\vsdevcmd.bat" -arch=x86 -host_arch=x64
 
-echo Building examples
-nimble examples
+call "%vc_dir%\Common7\Tools\vsdevcmd.bat" -arch=x64 -host_arch=x64
+
+cd /D %src_dir%
+REM set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
 
 echo Running tests
 nimble test
+
+echo Building examples
+nimble examples
