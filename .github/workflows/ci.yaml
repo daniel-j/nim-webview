@@ -1,0 +1,41 @@
+name: CI Pipeline
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: stable
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install libwebkit2gtk-4.0-dev xvfb -y
+      - name: Run tests and build examples
+        run: xvfb-run ./scripts/build.sh
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: stable
+      - name: Run tests and build examples
+        run: ./scripts/build.sh
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: stable
+      - name: Run tests and build examples
+        run: ./scripts/build.bat
