@@ -3,10 +3,11 @@ import json
 import httpclient
 import os
 import strutils
+import threadpool
 
 echo "starting"
 
-let w = newWebview(debug=true)
+let w = newWebview(debug = true)
 
 w.setSize(800, 600)
 w.setTitle("Webview Example")
@@ -24,23 +25,30 @@ proc onProgressChanged(total, progress, speed: BiggestInt) =
   echo("Downloaded ", progress, " of ", total)
   echo("Current rate: ", speed div 1000, "kb/s")
   {.gcsafe.}:
-    w.dispatch(proc () = w.eval("updateProgress(" & $ progress & ", " & $total & ", " & $speed & ")"))
+    w.dispatch(proc() = w.eval("updateProgress(" & $ progress & ", " & $total &
+        ", " & $speed & ")"))
 
-w.bind("downloadFile", proc (args: JsonNode): JsonNode =
+w.bind("downloadFile", proc (id: string, args: JsonNode) =
   let url = args[0].getStr()
-  echo "Downloading url: ", url
-  var client = newHttpClient()
-  w.dispatch(proc () = w.eval("updateProgress(0, 1, 0)"))
-  client.onProgressChanged = onProgressChanged
-  let content = client.getContent(url)
-  echo "Bytes downloaded: ", content.len
-  w.dispatch(proc () = w.eval("updateProgress(" & $ content.len & ", " & $content.len & ", 0)"))
-  return %* {"length": content.len}
+  echo "Downloading url in a separate thread: ", url
+
+  spawn (proc (w: Webview, id: string, url: string) =
+    # dispatch is required when calling eval etc. from other thread
+    w.dispatch(proc () = w.eval("updateProgress(0, 1, 0)"))
+    var client = newHttpClient()
+    client.onProgressChanged = onProgressChanged
+    let content = client.getContent(url)
+    echo "Bytes downloaded: ", content.len
+    w.dispatch(proc () =
+      w.eval("updateProgress(" & $ content.len & ", " & $content.len & ", 0)")
+      w.`return`(id, true, %* {"length": content.len})
+    )
+  )(w, id, url)
 )
 
 w.init("window.addEventListener('load', function (e) {webviewLoaded()}, false)")
 
-w.bind("externalNavigate", proc(args: JsonNode): JsonNode =
+w.bind("externalNavigate", proc (args: JsonNode): JsonNode =
   echo "clicked something with a href!"
   let href = args[0]["href"]
   let target = args[0]["target"]

@@ -6,9 +6,9 @@ import math
 proc then[T](p: PromiseJs, resolve: proc(val:T): PromiseJs|JsObject): PromiseJs {.importcpp, discardable.}
 proc then[T](p: PromiseJs, resolve: proc(val:T)): PromiseJs {.importcpp, discardable.}
 
-proc test(data: JsObject = nil): PromiseJs {.importc.}
-proc externalNavigate(data: JsObject) {.importc.}
-proc downloadFile(url: cstring) {.importc.}
+proc test(data: JsObject = nil): PromiseJs {.importc, discardable.}
+proc externalNavigate(data: JsObject): PromiseJs {.importc, discardable.}
+proc downloadFile(url: cstring): PromiseJs {.importc, discardable.}
 
 proc updateProgress(progress, total, speed: int) {.exportc.} =
   let downloadProgress = document.getElementById("downloadProgress")
@@ -34,7 +34,9 @@ window.addEventListener("DOMContentLoaded", (proc (_: Event) =
   ), true)
 
   document.getElementById("btn10MB").onclick = proc (_: Event) =
-    downloadFile("http://speedtest.tele2.net/10MB.zip")
+    downloadFile("http://speedtest.tele2.net/10MB.zip").then(proc (val: JsObject) =
+      echo "got length: ", val["length"].to(int)
+    )
   document.getElementById("btn100MB").onclick = proc (_: Event) =
     downloadFile("http://speedtest.tele2.net/100MB.zip")
 ))

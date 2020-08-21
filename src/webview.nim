@@ -1,12 +1,14 @@
 
 import json
-import threadpool
 import hashes
 import os
-import strutils
+
+when defined(windows) and defined(mingw):
+  import strutils
 
 const inclDir = currentSourcePath() /../ "" /../ "webview"
-const dllDir = currentSourcePath() /../ "" /../ "webview" / "dll" / "x64"
+when defined(windows):
+  const dllDir = currentSourcePath() /../ "" /../ "webview" / "dll" / "x64"
 
 when defined(windows) and defined(mingw):
   {.passC: "-I" & inclDir.replace($DirSep, "/").}
@@ -48,8 +50,9 @@ type
 
   DispatchCallback* = proc ()
   DispatchArg = ref tuple[fn: DispatchCallback]
-  BindCallback* = proc (args: JsonNode): JsonNode
-  BindSimpleCallback* = proc (args: JsonNode)
+  BindCallback* = proc (id: string, args: JsonNode)
+  BindCallbackReturn* = proc (args: JsonNode): JsonNode
+  BindCallbackNoReturn* = proc (args: JsonNode)
   BindArg = ref tuple[w: Webview, name: cstring, fn: BindCallback]
   
 
@@ -164,11 +167,8 @@ func setBorderless*(w: Webview, borderless: bool) =
 proc navigate*(w: Webview, url: string) =
   w.w.webview_navigate(url)
 
-proc run*(w: Webview, sync = false) =
+proc run*(w: Webview) =
   w.w.webview_run()
-  if sync:
-    sync()
-
 
 proc generalDispatchProc(_: webview_t, arg: pointer) {.gcsafe.} =
   let dispatchArg = cast[DispatchArg](arg)
@@ -184,35 +184,18 @@ proc dispatch*(w: Webview; fn: DispatchCallback) {.gcsafe.} =
   GC_ref(dispatchArg)
   w.w.webview_dispatch(generalDispatchProc, cast[pointer](dispatchArg))
 
-proc eval*(w: Webview, js: string) =
-  w.dispatch(proc () = w.w.webview_eval(js))
+proc eval*(w: Webview, js: string) {.gcsafe.} =
+  w.w.webview_eval(js)
 
-proc `return`(w: webview_t, `seq`: string, success: bool, result: JsonNode) =
+proc `return`*(w: Webview, id: string, success: bool, result: JsonNode) =
   if result.isNil:
-    # echo "return: nil"
-    w.webview_return(`seq`, (not success).cint, "null")
+    echo "return: nil"
+    w.w.webview_return(id, (not success).cint, "null")
   else:
-    # echo "return: " & $result
-    w.webview_return(`seq`, (not success).cint, $result)
+    echo "return: " & $result
+    w.w.webview_return(id, (not success).cint, $result)
 
-proc bindThread(w: Webview, name: cstring, fn: BindCallback, req: string, `seq`: string) {.thread.} =
-  # echo "callback " & $name & " running in thread: " & $getThreadId()
-  try:
-    let args = parseJson(req)
-    let data = fn(args)
-    let res = %* data
-    w.dispatch(proc() = w.w.return(`seq`, true, res))
-  except:
-    w.dispatch(proc() = w.w.return(`seq`, false, %* {"error": repr(getCurrentException()), "message": getCurrentExceptionMsg()}))
-    echo "Got exception ", repr(getCurrentException()), " with message ", getCurrentExceptionMsg()
 
-proc generalBindProc(`seq`: cstring; req: cstring; arg: pointer) =
-  let bindArg = cast[BindArg](arg)
-  let w = bindArg.w
-  let name = bindArg.name
-  let fn = bindArg.fn
-
-  spawn bindThread(w, name, fn, $req, $`seq`)
 
 proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   let bindArg = new(BindArg)
@@ -221,7 +204,21 @@ proc `bind`*(w: Webview, name: cstring, fn: BindCallback) =
   bindArg.fn = fn
 
   GC_ref(bindArg)
-  w.w.webview_bind(name, generalBindProc, cast[pointer](bindArg))
+  w.w.webview_bind(name, (proc (`seq`: cstring, req: cstring, arg: pointer) =
+    let bindArg = cast[BindArg](arg)
+    let fn = bindArg.fn
 
-proc `bind`*(w: Webview, name: cstring, fn: BindSimpleCallback) =
-  w.`bind`(name, proc (args: JsonNode): JsonNode = fn(args))
+    let args = parseJson($req)
+    fn($`seq`, args)), cast[pointer](bindArg))
+
+proc `bind`*(w: Webview, name: cstring, fn: BindCallbackReturn) =
+  w.`bind`(name, proc (id: string, args: JsonNode) =
+    let res = fn(args)
+    w.return(id, true, res)
+  )
+
+proc `bind`*(w: Webview, name: cstring, fn: BindCallbackNoReturn) =
+  w.`bind`(name, proc (id: string, args: JsonNode) =
+    fn(args)
+    w.return(id, true, nil)
+  )
