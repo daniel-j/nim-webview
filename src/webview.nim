@@ -35,7 +35,8 @@ elif defined(windows):
     {.passL: "-L" & dllDir.}
     {.passC: "-DWEBVIEW_WINAPI=1 /std:c++17 -I" & webviewScriptDir, passL: "-mwindows -lwebview -lWebView2Loader".}
 elif defined(macosx):
-  {.passC: "-DWEBVIEW_COCOA=1 -std=c++17 -x objective-c", passL: "-std=c++17 -framework WebKit".}
+  {.passC: "-std=c++17".}
+  {.passC: "-DWEBVIEW_COCOA=1 -x objective-c", passL: "-std=c++17 -framework WebKit".}
 
 type
   webview_t* = pointer
