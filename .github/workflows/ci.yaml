@@ -45,6 +45,8 @@ jobs:
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: stable
+      # - name: Restore nuget packages
+      #   run: nuget restore scripts\packages.config -PackagesDirectory scripts\nuget
       - name: Run tests and build examples
         run: ./scripts/build.bat
       - uses: actions/upload-artifact@v2

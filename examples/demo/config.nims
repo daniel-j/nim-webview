@@ -1,7 +1,6 @@
 switch("path", "../../src")
 
 when not defined(js):
-  switch("app", "gui")
   switch("threads", "on")
 
   when defined(macosx):
