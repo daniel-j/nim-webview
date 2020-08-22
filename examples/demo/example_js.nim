@@ -3,8 +3,8 @@ import jsffi
 import asyncjs
 import math
 
-proc then[T](p: PromiseJs, resolve: proc(val:T): PromiseJs|JsObject): PromiseJs {.importcpp, discardable.}
-proc then[T](p: PromiseJs, resolve: proc(val:T)): PromiseJs {.importcpp, discardable.}
+proc then[T](p: PromiseJs, resolve: proc(val:T): PromiseJs|JsObject): PromiseJs {.importcpp, discardable, used.}
+proc then[T](p: PromiseJs, resolve: proc(val:T)): PromiseJs {.importcpp, discardable, used.}
 
 proc test(data: JsObject = nil): PromiseJs {.importc, discardable.}
 proc externalNavigate(data: JsObject): PromiseJs {.importc, discardable.}
