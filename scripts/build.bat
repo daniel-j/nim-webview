@@ -39,3 +39,6 @@ nimble test
 
 echo Building examples
 nimble examples
+
+copy "%src_dir%\webview\script\microsoft.web.webview2.0.9.488\build\native\x64\WebView2Loader.dll" "%src_dir%\examples\demo"
+copy "%src_dir%\webview\script\microsoft.web.webview2.0.9.488\build\native\x64\WebView2Loader.dll" "%src_dir%\examples\simple"
