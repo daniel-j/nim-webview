@@ -73,7 +73,11 @@ w.bind("terminate", proc (args: JsonNode) =
 w.dispatch(proc () = echo "DISPATCH")
 
 
-let uri = "file://" & (getAppDir() / "main.html").replace($DirSep, "/")
+var uri = "file://" & (getAppDir() / "main.html").replace($DirSep, "/")
+
+if paramCount() >= 1:
+  uri = paramStr(1)
+
 echo uri
 
 w.navigate(uri)
