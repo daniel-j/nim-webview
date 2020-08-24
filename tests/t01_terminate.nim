@@ -5,9 +5,16 @@ import webview
 ## =================================================================
 
 proc test_terminate() =
+  echo "creating a webview"
   let w = newWebview(false, nil)
-  w.dispatch(proc () = w.terminate())
+  echo "dispatching a callback"
+  w.dispatch(proc () =
+    echo "terminating"
+    w.terminate()
+  )
+  echo "running main loop"
   w.run()
+  echo "destroying webview"
   w.destroy()
 
 test_terminate()
