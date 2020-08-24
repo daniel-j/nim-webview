@@ -3,16 +3,9 @@ import json
 import hashes
 import os
 
-when defined(windows) and defined(mingw):
-  import strutils
-
 const inclDir = currentSourcePath() /../ "" /../ "webview"
 
-when defined(windows) and defined(mingw):
-  {.passC: "-I" & inclDir.replace($DirSep, "/").}
-elif defined(windows):
-  {.passC: "/I" & inclDir.}
-else:
+when not (defined(windows) or defined(mingw)):
   {.passC: "-I" & inclDir.}
 
 when not defined(mingw):
@@ -31,15 +24,15 @@ when defined(linux):
   {.passC: "-DWEBVIEW_GTK=1 " & cflags, passL: "-static-libstdc++ -static-libgcc " & lflags.}
 elif defined(windows):
   when defined(mingw):
+    import strutils
     const dllDir = inclDir / "dll" / "x64"
     {.passL: "-L" & dllDir.replace($DirSep, "/").}
-    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1", passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
+    {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1 -I" & inclDir.replace($DirSep, "/"), passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
     # {.passL: "-L" & dllDir.}
-    const webviewScriptDir = inclDir / "script"
     const webview2Dir = inclDir / "script" / "microsoft.web.webview2.0.9.488" / "build" / "native" / "include"
     const webview2Lib = inclDir / "script" / "microsoft.web.webview2.0.9.488" / "build" / "native" / "x64" / "WebView2Loader.dll.lib"
-    {.passC: "/D WEBVIEW_WINAPI=1 /std:c++17 /I" & webview2Dir, passL: webview2Lib.}
+    {.passC: "/D WEBVIEW_WINAPI=1 /std:c++17 /I" & inclDir & " /I" & webview2Dir, passL: webview2Lib.}
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1", passL: "-framework WebKit".}
 
