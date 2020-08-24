@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install libwebkit2gtk-4.0-dev xvfb -y
       - name: Run tests and build examples
-        run: xvfb-run scripts/build.sh
+        run: xvfb-run script/build.sh
       - uses: actions/upload-artifact@v2
         with:
           name: examples-linux
@@ -30,7 +30,7 @@ jobs:
         with:
           nim-version: stable
       - name: Run tests and build examples
-        run: scripts/build.sh
+        run: script/build.sh
       - uses: actions/upload-artifact@v2
         with:
           name: examples-macos
@@ -46,11 +46,11 @@ jobs:
         with:
           nim-version: stable
       # - name: Restore nuget packages
-      #   run: nuget restore scripts\packages.config -PackagesDirectory scripts\nuget
+      #   run: nuget restore script\packages.config -PackagesDirectory script\nuget
       - name: Build webview
         run: webview/script/build.bat
       - name: Run tests and build examples
-        run: scripts/build.bat
+        run: script/build.bat
       - uses: actions/upload-artifact@v2
         with:
           name: examples-windows
