@@ -65,7 +65,7 @@ jobs:
       - name: Restore nuget packages
         run: nuget restore script\packages.config -PackagesDirectory script\nuget
 
-      - name: Run tests and build examples
+      - name: Build examples
         run: script/build.bat
 
       - name: Upload examples

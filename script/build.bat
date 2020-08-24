@@ -35,8 +35,8 @@ cd /D %src_dir%
 
 REM set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
 
-echo Running tests
-nimble test
+REM echo Running tests
+REM nimble test
 
 echo Building examples
 nimble examples || exit /b 1
