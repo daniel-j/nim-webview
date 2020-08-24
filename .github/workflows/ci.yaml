@@ -62,10 +62,10 @@ jobs:
         with:
           nim-version: stable
 
-      - name: Restore nuget packages
-        run: nuget restore script\packages.config -PackagesDirectory script\nuget
+      # - name: Restore nuget packages
+      #   run: nuget restore script\packages.config -PackagesDirectory script\nuget
 
-      - name: Build examples
+      - name: Run tests and build examples
         run: script/build.bat
 
       - name: Upload examples
