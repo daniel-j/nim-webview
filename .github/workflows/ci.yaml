@@ -5,17 +5,24 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: jiro4989/setup-nim-action@v1
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: stable
+
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install libwebkit2gtk-4.0-dev xvfb -y
+
       - name: Run tests and build examples
         run: xvfb-run script/build.sh
-      - uses: actions/upload-artifact@v2
+
+      - name: Upload examples
+        uses: actions/upload-artifact@v2
         with:
           name: examples-linux
           path: examples
@@ -23,15 +30,21 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: jiro4989/setup-nim-action@v1
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: stable
+
       - name: Run tests and build examples
         run: script/build.sh
-      - uses: actions/upload-artifact@v2
+
+      - name: Upload examples
+        uses: actions/upload-artifact@v2
         with:
           name: examples-macos
           path: examples
@@ -39,21 +52,24 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repo
+        uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: jiro4989/setup-nim-action@v1
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: stable
-      # - name: Restore nuget packages
-      #   run: nuget restore script\packages.config -PackagesDirectory script\nuget
-      - name: Build webview
-        run: webview/script/build.bat
+
+      - name: Restore nuget packages
+        run: nuget restore script\packages.config -PackagesDirectory script\nuget
+
       - name: Run tests and build examples
         run: script/build.bat
-      - uses: actions/upload-artifact@v2
+
+      - name: Upload examples
+        uses: actions/upload-artifact@v2
         with:
           name: examples-windows
-          path: |
-            examples
-            webview/dll
+          path: examples
