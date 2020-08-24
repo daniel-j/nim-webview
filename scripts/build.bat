@@ -33,7 +33,7 @@ call "%vc_dir%\Common7\Tools\vsdevcmd.bat" -arch=x64 -host_arch=x64
 
 cd /D %src_dir%
 
-set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
+REM set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
 
 echo Running tests
 nimble test
