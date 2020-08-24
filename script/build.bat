@@ -41,7 +41,7 @@ cmd.exe /c nimble test
 echo Building examples
 nimble examples || exit /b 1
 
-FOR /d %%i in ("%src_dir%\examples") do (
+FOR /d %%i in ("%src_dir%\examples\*") do (
 	echo "Copying WebView2Loader.dll to %%i"
-	copy "%src_dir%\webview\script\nuget\Microsoft.Web.WebView2.0.9.579\build\native\x64\WebView2Loader.dll" "%%i"
+	copy "%src_dir%\script\nuget\Microsoft.Web.WebView2.0.9.579\build\native\x64\WebView2Loader.dll" "%%i"
 )
