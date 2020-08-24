@@ -15,12 +15,12 @@ proc cb_terminate(w: webview_t, arg: pointer) {.cdecl.} =
 
 proc test_c_api() =
   let w = webview_create(false.cint, nil)
-  defer: webview_destroy(w)
   webview_set_size(w, 480, 320, 0)
   webview_set_title(w, "Test")
   webview_navigate(w, "https://github.com/zserge/webview")
   webview_dispatch(w, cb_assert_arg, cast[pointer]("arg".cstring))
   webview_dispatch(w, cb_terminate, nil)
   webview_run(w)
+  webview_destroy(w)
 
 test_c_api()
