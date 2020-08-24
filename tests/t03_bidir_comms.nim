@@ -7,6 +7,7 @@ import json
 
 proc test_bidir_comms() =
   let browser = newWebview(true, nil)
+  defer: browser.destroy()
 
   browser.bind("invoke", proc (arg: JsonNode) =
     let i = arg[0].getInt()

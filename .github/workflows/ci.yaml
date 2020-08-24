@@ -47,9 +47,15 @@ jobs:
           nim-version: stable
       # - name: Restore nuget packages
       #   run: nuget restore scripts\packages.config -PackagesDirectory scripts\nuget
+      - name: Build webview
+        run: ./webview/script/build.bat
       - name: Run tests and build examples
         run: ./scripts/build.bat
       - uses: actions/upload-artifact@v2
         with:
           name: examples-windows
           path: ./examples
+      - uses: actions/upload-artifact@v2
+        with:
+          name: windows
+          path: ./

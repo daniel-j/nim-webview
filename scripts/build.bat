@@ -32,7 +32,8 @@ REM call "%vc_dir%\Common7\Tools\vsdevcmd.bat" -arch=x86 -host_arch=x64
 call "%vc_dir%\Common7\Tools\vsdevcmd.bat" -arch=x64 -host_arch=x64
 
 cd /D %src_dir%
-REM set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
+
+set "PATH=%PATH%;%src_dir%\webview\dll\x64;%src_dir%\webview\dll\x86"
 
 echo Running tests
 nimble test
@@ -40,5 +41,6 @@ nimble test
 echo Building examples
 nimble examples
 
+copy "%src_dir%\webview\script\microsoft.web.webview2.0.9.488\build\native\x64\WebView2Loader.dll" "%src_dir%\tests"
 copy "%src_dir%\webview\script\microsoft.web.webview2.0.9.488\build\native\x64\WebView2Loader.dll" "%src_dir%\examples\demo"
 copy "%src_dir%\webview\script\microsoft.web.webview2.0.9.488\build\native\x64\WebView2Loader.dll" "%src_dir%\examples\simple"

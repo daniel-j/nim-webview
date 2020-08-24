@@ -6,6 +6,7 @@ import webview
 
 proc test_terminate() =
   let w = newWebview(false, nil)
+  defer: w.destroy()
   w.dispatch(proc () = w.terminate())
   w.run()
 
