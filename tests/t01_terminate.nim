@@ -17,5 +17,6 @@ proc test_terminate() =
   )
   echo "running main loop"
   w.run()
+  echo "main loop ended"
 
 test_terminate()

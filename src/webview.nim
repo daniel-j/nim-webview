@@ -10,8 +10,12 @@ const inclDir = currentSourcePath() /../ "" /../ "webview"
 
 when defined(windows) and defined(mingw):
   {.passC: "-I" & inclDir.replace($DirSep, "/").}
+elif defined(windows):
+  {.passC: "/I" & inclDir.}
 else:
   {.passC: "-I" & inclDir.}
+
+when not defined(mingw):
   {.compile: inclDir / "webview.cc".}
 
 {.pragma: implwebview, importc, cdecl.}
@@ -35,7 +39,7 @@ elif defined(windows):
     const webviewScriptDir = inclDir / "script"
     const webview2Dir = inclDir / "script" / "microsoft.web.webview2.0.9.488" / "build" / "native" / "include"
     const webview2Lib = inclDir / "script" / "microsoft.web.webview2.0.9.488" / "build" / "native" / "x64" / "WebView2Loader.dll.lib"
-    {.passC: "/D WEBVIEW_WINAPI=1 /std:c++17 /I " & webviewScriptDir & " /I " & webview2Dir, passL: webview2Lib.}
+    {.passC: "/D WEBVIEW_WINAPI=1 /std:c++17 /I" & webview2Dir, passL: webview2Lib.}
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1", passL: "-framework WebKit".}
 
