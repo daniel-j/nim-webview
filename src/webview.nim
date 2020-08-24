@@ -29,9 +29,9 @@ elif defined(windows):
     {.passL: "-L" & dllDir.replace($DirSep, "/").}
     {.passC: "-DWEBVIEW_WINAPI=1 -DWEBVIEW_HEADER=1 -I" & inclDir.replace($DirSep, "/"), passL: "-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -mwindows -lwebview -lWebView2Loader".}
   else:
-    const webview2Dir = inclDir / "script" / "nuget" / "Microsoft.Web.WebView2.0.9.488" / "build" / "native" / "include"
-    const webview2Lib = inclDir / "script" / "nuget" / "Microsoft.Web.WebView2.0.9.488" / "build" / "native" / "x64" / "WebView2Loader.dll.lib"
-    {.passC: "/D WEBVIEW_WINAPI=1 /std:c++17 /I" & inclDir & " /I" & webview2Dir, passL: webview2Lib.}
+    const webview2Dir = inclDir /../ "script" / "nuget" / "Microsoft.Web.WebView2.0.9.488" / "build" / "native" / "include"
+    const webview2Lib = inclDir /../ "script" / "nuget" / "Microsoft.Web.WebView2.0.9.488" / "build" / "native" / "x64" / "WebView2Loader.dll.lib"
+    {.passC: "/DWEBVIEW_WINAPI=1 /std:c++17 /I" & inclDir & " /I" & webview2Dir, passL: webview2Lib.}
 elif defined(macosx):
   {.passC: "-DWEBVIEW_COCOA=1", passL: "-framework WebKit".}
 
