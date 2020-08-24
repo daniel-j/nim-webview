@@ -5,8 +5,11 @@ import webview
 ## =================================================================
 
 proc test_terminate() =
-  echo "creating a webview"
+  echo "creating webview"
   let w = newWebview(false, nil)
+  defer:
+    echo "destroying webview"
+    w.destroy()
   echo "dispatching a callback"
   w.dispatch(proc () =
     echo "terminating"
@@ -14,7 +17,5 @@ proc test_terminate() =
   )
   echo "running main loop"
   w.run()
-  echo "destroying webview"
-  w.destroy()
 
 test_terminate()

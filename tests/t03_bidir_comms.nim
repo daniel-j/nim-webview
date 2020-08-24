@@ -7,6 +7,7 @@ import json
 
 proc test_bidir_comms() =
   let browser = newWebview(true, nil)
+  defer: browser.destroy()
 
   browser.bind("invoke", proc (arg: JsonNode) =
     let i = arg[0].getInt()
@@ -31,6 +32,5 @@ proc test_bidir_comms() =
   """)
   browser.navigate("data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E")
   browser.run()
-  browser.destroy()
 
 test_bidir_comms()
